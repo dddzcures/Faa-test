@@ -1,6 +1,7 @@
 let allQuestions = [];
 let selectedQuestions = [];
 let currentQuestionIndex = 0;
+let incorrectCount = 0;
 
 async function loadQuestions() {
   const res = await fetch('full_quiz_questions.json');
@@ -39,20 +40,35 @@ function showQuestion() {
   shuffledChoices.forEach(choice => {
     const btn = document.createElement("button");
     btn.innerText = questionObj[`Answer ${choice}`];
-    btn.onclick = () => {
-      if (choice === questionObj["Correct Choice"]) {
-        currentQuestionIndex++;
-        if (currentQuestionIndex < selectedQuestions.length) {
-          showQuestion();
-        } else {
-          document.getElementById("quiz-container").innerHTML = "<h2>Quiz Complete!</h2>";
-        }
-      } else {
-        btn.classList.add("incorrect");
-      }
-    };
+    btn.onclick = () => handleAnswer(choice, questionObj["Correct Choice"], btn);
     answersDiv.appendChild(btn);
   });
+}
+
+function handleAnswer(selected, correct, button) {
+  if (selected === correct) {
+    currentQuestionIndex++;
+    if (currentQuestionIndex < selectedQuestions.length) {
+      showQuestion();
+    } else {
+      showFinalScore();
+    }
+  } else {
+    incorrectCount++;
+    button.classList.add("incorrect");
+  }
+}
+
+function showFinalScore() {
+  const correctCount = selectedQuestions.length - incorrectCount;
+  const scorePercent = Math.round((correctCount / selectedQuestions.length) * 100);
+
+  document.getElementById("quiz-container").innerHTML = `
+    <h2>Quiz Complete!</h2>
+    <p>You answered ${correctCount} out of ${selectedQuestions.length} questions correctly.</p>
+    <p>Incorrect answers: ${incorrectCount}</p>
+    <p>Your Score: ${scorePercent}%</p>
+  `;
 }
 
 loadQuestions();
