@@ -1,26 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FAA Quiz</title>
-  <link rel="stylesheet" href="styles.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAA Test</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div id="quiz-container">
-    <h1>FAA Maintenance Quiz</h1>
-    <div id="question-box">
-      <p id="question-text"></p>
-      <form id="options-form"></form>
-      <button id="submit-btn">Submit Answer</button>
-      <p id="feedback"></p>
+    <div id="counter">0/0</div>
+    <div id="quiz-container">
+        <h1>FAA Test Quiz</h1>
+        <div id="question"></div>
+        <div id="answers"></div>
     </div>
-    <div id="result-box" style="display: none;">
-      <h2>Quiz Complete!</h2>
-      <p id="final-score"></p>
-    </div>
-  </div>
-  <script src="quiz.js"></script>
+    <script src="quiz.js"></script>
 </body>
 </html>
