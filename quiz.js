@@ -2,7 +2,7 @@ let allQuestions = [];
 let selectedQuestions = [];
 let currentQuestionIndex = 0;
 let incorrectCount = 0;
-let hasAnswered = false;
+let hasCountedIncorrect = false;
 
 async function loadQuestions() {
   const res = await fetch('full_quiz_questions.json');
@@ -17,7 +17,7 @@ function getRandomQuestions(array, count) {
 }
 
 function showQuestion() {
-  hasAnswered = false;
+  hasCountedIncorrect = false;
   const questionObj = selectedQuestions[currentQuestionIndex];
   document.getElementById("progress").innerText = `${currentQuestionIndex + 1}/60`;
   document.getElementById("question-container").innerText = questionObj["Rephrased Question"];
@@ -48,13 +48,10 @@ function showQuestion() {
 }
 
 function handleAnswer(selected, correct, button) {
-  if (hasAnswered) return;
-  hasAnswered = true;
-
-  const allButtons = document.querySelectorAll("#answers button");
-  allButtons.forEach(btn => btn.disabled = true);
-
   if (selected === correct) {
+    // Disable all buttons before advancing
+    document.querySelectorAll("#answers button").forEach(btn => btn.disabled = true);
+
     setTimeout(() => {
       currentQuestionIndex++;
       if (currentQuestionIndex < selectedQuestions.length) {
@@ -62,10 +59,14 @@ function handleAnswer(selected, correct, button) {
       } else {
         showFinalScore();
       }
-    }, 600); // short delay before moving to next question
+    }, 500);
   } else {
-    incorrectCount++;
+    if (!hasCountedIncorrect) {
+      incorrectCount++;
+      hasCountedIncorrect = true;
+    }
     button.classList.add("incorrect");
+    button.disabled = true;
   }
 }
 
