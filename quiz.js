@@ -53,47 +53,37 @@ function showQuestion() {
 
   if (figureNumber) {
     const imgPath = `figures/general_${figureNumber}.png`;
-    htmlContent += `<img src="${imgPath}" alt="Figure ${figureNumber}" class="figure-image" />`;
+    htmlContent += `<img src="\${imgPath}" alt="Figure \${figureNumber}" class="figure-image" />`;
   }
 
   questionText.innerHTML = htmlContent;
 
   const shuffledAnswers = shuffle([...questionObj.answers]);
+
   shuffledAnswers.forEach(answer => {
-    const label = document.createElement('label');
-    const input = document.createElement('input');
-    input.type = 'radio';
-    input.name = 'option';
-    input.value = answer.key;
-    label.appendChild(input);
-    label.appendChild(document.createTextNode(answer.text));
-    form.appendChild(label);
-    form.appendChild(document.createElement('br'));
+    const button = document.createElement('button');
+    button.textContent = answer.text;
+    button.className = 'answer-button';
+    button.onclick = () => {
+      const isCorrect = answer.key === questionObj.correct;
+      if (isCorrect) {
+        score++;
+        feedback.textContent = '✅ Correct!';
+      } else {
+        const correctAnswer = questionObj.answers.find(a => a.key === questionObj.correct);
+        feedback.textContent = `❌ Incorrect. Correct answer: \${questionObj.correct} - \${correctAnswer?.text}`;
+      }
+
+      document.querySelectorAll('.answer-button').forEach(btn => btn.disabled = true);
+
+      setTimeout(() => {
+        currentQuestionIndex++;
+        showQuestion();
+      }, 1500);
+    };
+
+    form.appendChild(button);
   });
 }
-
-document.getElementById('submit-btn').addEventListener('click', () => {
-  const selected = document.querySelector('input[name="option"]:checked');
-  if (!selected) {
-    alert('Please select an answer.');
-    return;
-  }
-
-  const selectedValue = selected.value;
-  const correctKey = questions[currentQuestionIndex].correct;
-
-  if (selectedValue === correctKey) {
-    score++;
-    document.getElementById('feedback').textContent = '✅ Correct!';
-  } else {
-    const correctAnswer = questions[currentQuestionIndex].answers.find(a => a.key === correctKey);
-    document.getElementById('feedback').textContent = `❌ Incorrect. Correct answer: ${correctKey} - ${correctAnswer?.text}`;
-  }
-
-  setTimeout(() => {
-    currentQuestionIndex++;
-    showQuestion();
-  }, 1500);
-});
 
 loadCSV();
