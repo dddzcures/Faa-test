@@ -142,14 +142,17 @@
         // Track whether we’ve already recorded a wrong attempt on this question
         let flaggedWrong = false;
 
-        // 2a. Figure (if any)
+        // 2a. Figure handling (supports multiple names separated by "|")
         if (qObj.faa_figure) {
-          // Append “.png” to the base name stored in faa_figure
-          const img = document.createElement("img");
-          img.src = `figures/${qObj.faa_figure}.png`;
-          img.alt = `Figure for question ${qObj.id}`;
-          img.className = "figure";
-          container.appendChild(img);
+          // e.g. "general_62|general_62a|general_62b"
+          const names = qObj.faa_figure.split("|");
+          names.forEach((baseName) => {
+            const img = document.createElement("img");
+            img.src = `figures/${baseName}.png`;
+            img.alt = `Figure for question ${qObj.id}`;
+            img.className = "figure";
+            container.appendChild(img);
+          });
         }
 
         // 2b. Question text
