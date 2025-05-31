@@ -103,13 +103,13 @@
 
     // ---------- Main Quiz Logic ----------
     document.addEventListener("DOMContentLoaded", () => {
-      fetch("questions.json")
+      fetch("AMG_General_Questions_fixed_v2.json")
         .then((res) => res.json())
         .then((questions) => {
           initializeQuiz(questions);
         })
         .catch((err) => {
-          console.error("Failed to load questions.json:", err);
+          console.error("Failed to load JSON:", err);
           document.getElementById("quiz-container").innerText =
             "Error loading questions.";
         });
@@ -121,8 +121,8 @@
 
       const totalQuestions = allQuestions.length;
       let currentIndex = 0;
-      // Will collect items of the form { question: "...", chosen: "B", correct: "C" }
-      // for any question where the user made at least one wrong selection.
+      // Will collect { question, chosen, correct, chosenText, correctText } for any question
+      // where the user made at least one wrong selection.
       const wrongList = [];
 
       // 2. Function to show a particular question
@@ -139,13 +139,14 @@
         }
 
         const qObj = allQuestions[currentIndex];
-        // Track if this question has already been added to wrongList.
+        // Track whether we’ve already recorded a wrong attempt on this question
         let flaggedWrong = false;
 
         // 2a. Figure (if any)
-        if (qObj.figure) {
+        if (qObj.faa_figure) {
+          // Append “.png” to the base name stored in faa_figure
           const img = document.createElement("img");
-          img.src = `figures/${qObj.figure}`;
+          img.src = `figures/${qObj.faa_figure}.png`;
           img.alt = `Figure for question ${qObj.id}`;
           img.className = "figure";
           container.appendChild(img);
@@ -166,8 +167,10 @@
         ["A", "B", "C"].forEach((letter) => {
           const btn = document.createElement("button");
           btn.className = "choice-btn";
-          // Format: "A. [answerA text]"
-          btn.innerText = `${letter}. ${qObj.choices[letter]}`;
+          // Use qObj["answerA"], qObj["answerB"], qObj["answerC"]
+          const answerText = qObj[`answer${letter}`];
+          btn.innerText = `${letter}. ${answerText}`;
+
           btn.addEventListener("click", () => {
             // If the user clicked the correct letter:
             if (letter === qObj.correctChoice) {
@@ -183,8 +186,8 @@
                   question: qObj.question,
                   chosen: letter,
                   correct: qObj.correctChoice,
-                  chosenText: qObj.choices[letter],
-                  correctText: qObj.choices[qObj.correctChoice],
+                  chosenText: qObj[`answer${letter}`],
+                  correctText: qObj[`answer${qObj.correctChoice}`],
                 });
                 flaggedWrong = true;
               }
