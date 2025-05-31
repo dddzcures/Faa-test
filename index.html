@@ -3,16 +3,253 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>FAA Quiz</title>
-  <link rel="stylesheet" href="styles.css" />
+  <title>General Questions Quiz</title>
+  <style>
+    /* ---------- Global & Layout ---------- */
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .status {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 14px;
+      color: #ccc;
+    }
+    .container {
+      width: 90%;
+      max-width: 600px;
+      margin-bottom: 40px;
+    }
+    .question {
+      margin-bottom: 20px;
+      font-size: 18px;
+      line-height: 1.4;
+    }
+    .figure {
+      margin-bottom: 20px;
+      max-width: 100%;
+      height: auto;
+      border: 1px solid #444;
+    }
+    .choices {
+      display: flex;
+      flex-direction: column;
+    }
+    .choice-btn {
+      background-color: #333;
+      color: #fff;
+      border: none;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 5px;
+      text-align: left;
+      transition: background-color 0.2s;
+    }
+    .choice-btn:hover {
+      background-color: #444;
+    }
+    .choice-btn.incorrect {
+      background-color: red !important;
+      color: #fff;
+    }
+    /* ---------- Summary Styles ---------- */
+    .summary {
+      text-align: center;
+      margin-top: 30px;
+    }
+    .summary-list {
+      margin-top: 20px;
+      text-align: left;
+      list-style: none;
+      padding: 0;
+    }
+    .summary-list li {
+      margin-bottom: 14px;
+      border-bottom: 1px solid #444;
+      padding-bottom: 8px;
+    }
+    .summary-list li span {
+      display: block;
+      margin: 4px 0;
+    }
+  </style>
 </head>
 <body>
-  <div id="progress">1/60</div>
-  <div id="quiz-container">
-    <div id="question-container"></div>
-    <img id="figure-img" src="" alt="" style="display:none;" />
-    <div id="answers"></div>
-  </div>
-  <script src="quiz.js"></script>
+  <div class="status" id="status">Loading…</div>
+  <div class="container" id="quiz-container"></div>
+
+  <script>
+    // ---------- Utility: Shuffle an array in place (Fisher–Yates) ----------
+    function shuffleArray(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+    }
+
+    // ---------- Main Quiz Logic ----------
+    document.addEventListener("DOMContentLoaded", () => {
+      fetch("questions.json")
+        .then((res) => res.json())
+        .then((questions) => {
+          initializeQuiz(questions);
+        })
+        .catch((err) => {
+          console.error("Failed to load questions.json:", err);
+          document.getElementById("quiz-container").innerText =
+            "Error loading questions.";
+        });
+    });
+
+    function initializeQuiz(allQuestions) {
+      // 1. Shuffle the questions
+      shuffleArray(allQuestions);
+
+      const totalQuestions = allQuestions.length;
+      let currentIndex = 0;
+      // Will collect items of the form { question: "...", chosen: "B", correct: "C" }
+      // for any question where the user made at least one wrong selection.
+      const wrongList = [];
+
+      // 2. Function to show a particular question
+      function showQuestion() {
+        const container = document.getElementById("quiz-container");
+        container.innerHTML = ""; // clear previous
+        const statusDiv = document.getElementById("status");
+        statusDiv.innerText = `Question ${currentIndex + 1} of ${totalQuestions}`;
+
+        if (currentIndex >= totalQuestions) {
+          // All done → show summary
+          showSummary();
+          return;
+        }
+
+        const qObj = allQuestions[currentIndex];
+        // Track if this question has already been added to wrongList.
+        let flaggedWrong = false;
+
+        // 2a. Figure (if any)
+        if (qObj.figure) {
+          const img = document.createElement("img");
+          img.src = `figures/${qObj.figure}`;
+          img.alt = `Figure for question ${qObj.id}`;
+          img.className = "figure";
+          container.appendChild(img);
+        }
+
+        // 2b. Question text
+        const qText = document.createElement("div");
+        qText.className = "question";
+        qText.innerText = qObj.question;
+        container.appendChild(qText);
+
+        // 2c. Answer buttons
+        const choicesDiv = document.createElement("div");
+        choicesDiv.className = "choices";
+        container.appendChild(choicesDiv);
+
+        // For each choice letter A, B, C:
+        ["A", "B", "C"].forEach((letter) => {
+          const btn = document.createElement("button");
+          btn.className = "choice-btn";
+          // Format: "A. [answerA text]"
+          btn.innerText = `${letter}. ${qObj.choices[letter]}`;
+          btn.addEventListener("click", () => {
+            // If the user clicked the correct letter:
+            if (letter === qObj.correctChoice) {
+              // Move to next question
+              currentIndex++;
+              showQuestion();
+            } else {
+              // Wrong choice: mark button red
+              btn.classList.add("incorrect");
+              // If this is the first wrong attempt for this question, record it
+              if (!flaggedWrong) {
+                wrongList.push({
+                  question: qObj.question,
+                  chosen: letter,
+                  correct: qObj.correctChoice,
+                  chosenText: qObj.choices[letter],
+                  correctText: qObj.choices[qObj.correctChoice],
+                });
+                flaggedWrong = true;
+              }
+            }
+          });
+          choicesDiv.appendChild(btn);
+        });
+      }
+
+      // 3. Summary screen (after finishing all questions)
+      function showSummary() {
+        const container = document.getElementById("quiz-container");
+        container.innerHTML = ""; // clear quiz UI
+        document.getElementById("status").style.display = "none";
+
+        const summaryDiv = document.createElement("div");
+        summaryDiv.className = "summary";
+
+        const totalWrong = wrongList.length;
+        const totalCorrect = totalQuestions - totalWrong;
+
+        const heading = document.createElement("h2");
+        heading.innerText = "Quiz Complete!";
+        summaryDiv.appendChild(heading);
+
+        const score = document.createElement("p");
+        score.innerText = `You answered ${totalCorrect} out of ${totalQuestions} correctly.`;
+        summaryDiv.appendChild(score);
+
+        if (wrongList.length > 0) {
+          const listTitle = document.createElement("h3");
+          listTitle.innerText = "Questions you answered incorrectly:";
+          summaryDiv.appendChild(listTitle);
+
+          const ul = document.createElement("ul");
+          ul.className = "summary-list";
+          wrongList.forEach((item) => {
+            const li = document.createElement("li");
+
+            // Question text
+            const qSpan = document.createElement("span");
+            qSpan.innerText = `Q: ${item.question}`;
+            li.appendChild(qSpan);
+
+            // What the user first chose (wrong choice)
+            const chosenSpan = document.createElement("span");
+            chosenSpan.innerText = `Your answer: ${item.chosen}. ${item.chosenText}`;
+            li.appendChild(chosenSpan);
+
+            // The correct answer
+            const correctSpan = document.createElement("span");
+            correctSpan.innerText = `Correct answer: ${item.correct}. ${item.correctText}`;
+            li.appendChild(correctSpan);
+
+            ul.appendChild(li);
+          });
+          summaryDiv.appendChild(ul);
+        }
+
+        container.appendChild(summaryDiv);
+      }
+
+      // Kick off the quiz:
+      showQuestion();
+    }
+  </script>
 </body>
 </html>
